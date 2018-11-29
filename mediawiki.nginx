@@ -1,6 +1,7 @@
 server {
     server_name wiki.nginx.org;
     root /var/www/mediawiki;
+    index index.php
 
     client_max_body_size 5m;
     client_body_timeout 60;
@@ -13,13 +14,22 @@ server {
         rewrite ^/(.*)$ /index.php?title=$1&$args;
     }
 
+	  location ~ \.(cgi|pl)$ {
+	  	include fastcgi_params;
+	  	fastcgi_index index.cgi;
+	  	fastcgi_param SCRIPT_NAME $uri;
+	  	fastcgi_pass unix:/var/run/fcgiwrap.sock;
+	  }
+
+  	location ~ \.php$ {
+  		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+  		include fastcgi.conf;
+  		fastcgi_index index.php;
+  		fastcgi_pass unix:/var/run/php/php7.0-fpm.sock;
+  	}
+
     location ^~ /maintenance/ {
         return 403;
-    }
-
-    location ~ \.php$ {
-        include fastcgi_params;
-        fastcgi_pass unix:/tmp/phpfpm.sock;
     }
 
     location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
